@@ -1,5 +1,5 @@
-# PyQt5Template. Created on 21.04.2015
-# Copyright (c) 2015 Andreas Schulz
+# QHN. Created on 16.05.2016
+# Copyright (c) 2016 Andreas Schulz
 #
 # The MIT License (MIT)
 #
