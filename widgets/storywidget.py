@@ -101,9 +101,3 @@ def format_time(seconds):
         if m == 1:
             return '%d minute ago' % m
         return '%d minutes ago' % m
-
-
-def format_comments(comment_count):
-    if comment_count == 1:
-        return '%d comment' % comment_count
-    return '%d comments' % comment_count
