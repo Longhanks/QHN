@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>185</width>
-    <height>43</height>
+    <width>187</width>
+    <height>46</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -37,14 +37,14 @@
     </widget>
    </item>
    <item row="0" column="1">
-    <widget class="QLabel" name="labelTitle">
+    <widget class="ClickableLabel" name="labelTitle">
      <property name="text">
       <string>TextLabel</string>
      </property>
     </widget>
    </item>
    <item row="0" column="2">
-    <widget class="ClickableLabel" name="labelURL">
+    <widget class="QLabel" name="labelURL">
      <property name="text">
       <string>TextLabel</string>
      </property>
@@ -64,11 +64,38 @@
     </spacer>
    </item>
    <item row="1" column="1" colspan="3">
-    <widget class="QLabel" name="labelSubtitle">
-     <property name="text">
-      <string>TextLabel</string>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="spacing">
+      <number>0</number>
      </property>
-    </widget>
+     <item>
+      <widget class="QLabel" name="labelSubtitle">
+       <property name="text">
+        <string>TextLabel</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="CommentsLabel" name="labelComments">
+       <property name="text">
+        <string>TextLabel</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
@@ -77,6 +104,11 @@
    <class>ClickableLabel</class>
    <extends>QLabel</extends>
    <header>widgets/clickablelabel.h</header>
+  </customwidget>
+  <customwidget>
+   <class>CommentsLabel</class>
+   <extends>QLabel</extends>
+   <header>widgets/commentslabel.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

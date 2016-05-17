@@ -39,7 +39,7 @@ class MainWindow(QMainWindow):
     fetchedItem = pyqtSignal(dict)
 
     def __init__(self, parent=None):
-        super(MainWindow, self).__init__(parent)
+        super().__init__(parent)
         uic.loadUi(os.path.join(getResourcesPath(), 'ui', 'mainwindow.ui'),
                    self)
         self.listWidget.setAttribute(Qt.WA_MacShowFocusRect, 0)

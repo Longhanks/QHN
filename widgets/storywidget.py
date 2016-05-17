@@ -24,44 +24,70 @@
 
 import os
 import time
+from urllib.parse import urlparse
 
 from PyQt5 import uic
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtCore import QUrl
 
-from widgets.clickablelabel import ClickableLabel
 from utilities import getResourcesPath
 
 
 class StoryWidget(QWidget):
     def __init__(self, HNItem, parent=None):
-        super(QWidget, self).__init__(parent)
+        super().__init__(parent)
         uic.loadUi(os.path.join(getResourcesPath(), 'ui', 'storywidget.ui'),
                    self)
+        # format position
         self.labelPosition.setText('%2d. ' % HNItem['pos'])
         self.labelPosition.setStyleSheet(
             'QLabel { font-size : 12pt; color: gray}')
+
+        # format title
         self.labelTitle.setText('%s ' % HNItem['title'])
         self.labelTitle.setStyleSheet('QLabel { font-size : 12pt; }')
-        self.labelURL.url = HNItem['url']
-        self.labelURL.setStyleSheet(ClickableLabel.DEFAULT_CSS)
-        self.labelURL.setNormalText()
-        self.labelURL.clicked.connect(self.openURL)
+        self.labelTitle.underlineTextOnHover = False
+        self.labelTitle.clicked.connect(self.openURL)
+
+        # format url
+        try:
+            # if story has a source url
+            self.labelTitle.url = HNItem['url']
+
+            # format url nicely (eg http://www.google.com/ -> google.com)
+            netloc = urlparse(self.labelTitle.url).netloc
+            if netloc.startswith('www.'):
+                netloc = netloc[4:]
+            self.labelURL.setText('(%s)' % netloc)
+            self.labelURL.setStyleSheet(
+                'QLabel { font-size: 11pt; color : gray; }')
+        except KeyError as e:
+            # story doesn't have a source url. Don't display labelURL.
+            # story is a job.
+            # TODO: infer URL of job...
+            self.labelTitle.url = ""
+            self.labelURL.setVisible(False)
+            self.labelComments.setVisible(False)
+
+        # format subtitle and comments (if existing)
         if HNItem['type'] == 'job':
             self.labelSubtitle.setText(format_time(HNItem['time']))
         else:
-            self.labelSubtitle.setText('%d points by %s %s | %s' %
+            self.labelSubtitle.setText('%d points by %s %s | ' %
                                        (HNItem['score'],
                                         HNItem['by'],
-                                        format_time(HNItem['time']),
-                                        format_comments(
-                                            HNItem['descendants'])))
+                                        format_time(HNItem['time'])))
+            self.labelComments.commentCount = HNItem['descendants']
+            self.labelComments.setNormalText()
         self.labelSubtitle.setStyleSheet(
             'QLabel { font-size : 9pt; color: gray }')
+        self.labelComments.setStyleSheet(
+            'QLabel { font-size : 9pt; color: gray }')
 
-    def openURL(self):
-        QDesktopServices.openUrl(QUrl(self.sender().url))
+    def openURL(self, url):
+        if url:
+            QDesktopServices.openUrl(QUrl(url))
 
 
 def format_time(seconds):

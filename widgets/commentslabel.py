@@ -22,43 +22,22 @@
 # SOFTWARE.
 
 
-from urllib.parse import urlparse
-
-from PyQt5.QtWidgets import QLabel
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtCore import Qt
+from widgets.clickablelabel import ClickableLabel
 
 
-class ClickableLabel(QLabel):
-    clicked = pyqtSignal(str)
-
+class CommentsLabel(ClickableLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.url = ""
-        self.underlineTextOnHover = True
-
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.clicked.emit(self.url)
-
-    def enterEvent(self, QEvent):
-        self.setCursor(Qt.PointingHandCursor)
-        if self.underlineTextOnHover:
-            self.setUnderlinedText()
-
-    def leaveEvent(self, QEvent):
-        self.setCursor(Qt.ArrowCursor)
-        if self.underlineTextOnHover:
-            self.setNormalText()
+        self.commentCount = 0
 
     def setNormalText(self):
-        netloc = urlparse(self.url).netloc
-        if netloc.startswith('www.'):
-            netloc = netloc[4:]
-        self.setText('(%s)' % netloc)
+        if self.commentCount == 1:
+            self.setText('%d comment' % self.commentCount)
+        else:
+            self.setText('%d comments' % self.commentCount)
 
     def setUnderlinedText(self):
-        netloc = urlparse(self.url).netloc
-        if netloc.startswith('www.'):
-            netloc = netloc[4:]
-        self.setText('(<u>%s</u>)' % netloc)
+        if self.commentCount == 1:
+            self.setText('<u>%d comment</u>' % self.commentCount)
+        else:
+            self.setText('<u>%d comments</u>' % self.commentCount)
