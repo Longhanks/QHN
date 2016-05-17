@@ -27,9 +27,9 @@ import time
 from urllib.parse import urlparse
 
 from PyQt5 import uic
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QTreeWidget, QTreeWidgetItem
 from PyQt5.QtGui import QDesktopServices
-from PyQt5.QtCore import QUrl
+from PyQt5.QtCore import QUrl, Qt
 
 from utilities import getResourcesPath
 
@@ -44,6 +44,11 @@ class StoryWidget(QWidget):
                    self)
         self.pos = HNItem['pos']
         self.kids = HNItem['kids'] if 'kids' in HNItem else []
+        self.commentsTree = QTreeWidget()
+        self.commentsTree.setAttribute(Qt.WA_MacShowFocusRect, 0)
+        self.commentsTree.addTopLevelItem(
+            # demo item
+            QTreeWidgetItem([str(HNItem['pos'])]))
 
         # format position
         self.labelPosition.setText('%2d. ' % self.pos)
@@ -97,10 +102,14 @@ class StoryWidget(QWidget):
             QDesktopServices.openUrl(QUrl(url))
 
     def openComments(self):
-        for kid in self.kids:
-            item = self.mainWindow.hn.get('item/%r' % kid, name=None)
-            if not 'deleted' in item:
-                print(item)
+        self.mainWindow.toolBar.setVisible(True)
+        if self.stackedWidget.indexOf(self.commentsTree) == -1:
+            self.stackedWidget.addWidget(self.commentsTree)
+        self.stackedWidget.setCurrentWidget(self.commentsTree)
+        #for kid in self.kids:
+            #item = self.mainWindow.hn.get('item/%r' % kid, name=None)
+            #if not 'deleted' in item:
+                #print(item)
 
 
 def format_time(seconds):

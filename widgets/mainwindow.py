@@ -27,7 +27,7 @@ import threading
 from firebase import firebase
 
 from PyQt5 import uic
-from PyQt5.QtWidgets import QMainWindow, QListWidgetItem
+from PyQt5.QtWidgets import QMainWindow, QPushButton
 from PyQt5.QtCore import Qt, pyqtSignal
 
 from utilities import getResourcesPath
@@ -42,7 +42,13 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
         uic.loadUi(os.path.join(getResourcesPath(), 'ui', 'mainwindow.ui'),
                    self)
+        self.backButton = QPushButton("<-")
+        self.backButton.clicked.connect(self.backPressed)
+        self.toolBar.addWidget(self.backButton)
+        self.toolBar.setVisible(False)
         self.listWidget.setAttribute(Qt.WA_MacShowFocusRect, 0)
+
+        # start HN Connection
         self.hn = firebase.FirebaseApplication(
             'https://hacker-news.firebaseio.com/v0/')
         topstory_items = self.hn.get('topstories', name=None)
@@ -54,6 +60,10 @@ class MainWindow(QMainWindow):
             thd = threading.Thread(target=self.fetchItem, args=(tup,))
             thd.daemon = True
             thd.start()
+
+    def backPressed(self):
+        self.stackedWidget.setCurrentIndex(0)
+        self.toolBar.setVisible(False)
 
     def fetchItem(self, tup):
         HNItem = self.hn.get('item/%r' % tup[1], name=None)
