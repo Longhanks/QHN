@@ -24,17 +24,23 @@
 
 import os
 import time
+import threading
 from urllib.parse import urlparse
+from html import unescape
 
 from PyQt5 import uic
-from PyQt5.QtWidgets import QWidget, QTreeWidget, QTreeWidgetItem
-from PyQt5.QtGui import QDesktopServices
-from PyQt5.QtCore import QUrl, Qt
+from PyQt5.QtWidgets import QWidget, QTreeView, QStyledItemDelegate, \
+    QAbstractItemView
+from PyQt5.QtGui import QDesktopServices, QStandardItemModel, QTextDocument, \
+    QStandardItem
+from PyQt5.QtCore import QUrl, Qt, QSize, pyqtSignal, QSortFilterProxyModel
 
 from utilities import getResourcesPath
 
 
 class StoryWidget(QWidget):
+    fetchedComment = pyqtSignal(dict)
+
     def __init__(self, HNItem, parent=None):
         super().__init__(parent)
         self.listWidget = self.parent()
@@ -44,11 +50,13 @@ class StoryWidget(QWidget):
                    self)
         self.pos = HNItem['pos']
         self.kids = HNItem['kids'] if 'kids' in HNItem else []
-        self.commentsTree = QTreeWidget()
+        self.commentsTree = CommentTree()
+        self.commentsTree.setVerticalScrollMode(
+            QAbstractItemView.ScrollPerPixel)
+        self.commentsTree.setSelectionMode(QAbstractItemView.NoSelection)
         self.commentsTree.setAttribute(Qt.WA_MacShowFocusRect, 0)
-        self.commentsTree.addTopLevelItem(
-            # demo item
-            QTreeWidgetItem([str(HNItem['pos'])]))
+        self.commentsTree.header().hide()
+        self.fetchedComment.connect(self.addComment)
 
         # format position
         self.labelPosition.setText('%2d. ' % self.pos)
@@ -103,13 +111,39 @@ class StoryWidget(QWidget):
 
     def openComments(self):
         self.mainWindow.toolBar.setVisible(True)
-        if self.stackedWidget.indexOf(self.commentsTree) == -1:
-            self.stackedWidget.addWidget(self.commentsTree)
-        self.stackedWidget.setCurrentWidget(self.commentsTree)
-        #for kid in self.kids:
-            #item = self.mainWindow.hn.get('item/%r' % kid, name=None)
-            #if not 'deleted' in item:
-                #print(item)
+        if self.stackedWidget.indexOf(self.commentsTree) != -1:
+            self.stackedWidget.setCurrentWidget(self.commentsTree)
+            return
+        self.stackedWidget.addWidget(self.commentsTree)
+        self.maxCommentCount = len(self.kids)
+        self.currentCommentCount = 0
+        for tup in enumerate(self.kids):
+            thd = threading.Thread(target=self.fetchComment, args=(tup,))
+            thd.daemon = True
+            thd.start()
+
+    def fetchComment(self, tup):
+        HTComment = self.mainWindow.hn.get('item/%r' % tup[1], name=None)
+        HTComment['pos'] = tup[0]
+        self.fetchedComment.emit(HTComment)
+
+    def addComment(self, HNComment):
+        self.currentCommentCount += 1
+        if not 'deleted' in HNComment:
+            authorItem = QStandardItem(
+                '<style>#author { color: gray; font-size: 11pt; '
+                'margin-bottom: 5px } </style><p id="author">' +
+                HNComment['by'] + ' ' +
+                format_time(HNComment['time']) + '</p>')
+            authorItem.setData(HNComment['pos'], Qt.UserRole + 1337)
+            textItem = QStandardItem(unescape(HNComment['text']))
+            textItem.setData(HNComment['pos'], Qt.UserRole + 1337)
+            authorItem.appendRow(textItem)
+            self.commentsTree.rootItem.appendRow(authorItem)
+        if self.currentCommentCount == self.maxCommentCount:
+            self.commentsTree.sortByColumn(0, Qt.AscendingOrder)
+            self.commentsTree.expandAll()
+            self.stackedWidget.setCurrentWidget(self.commentsTree)
 
 
 def format_time(seconds):
@@ -123,3 +157,51 @@ def format_time(seconds):
         if m == 1:
             return '%d minute ago' % m
         return '%d minutes ago' % m
+
+
+class CommentTree(QTreeView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setUniformRowHeights(False)
+        self.setAnimated(True)
+        self.model = QStandardItemModel()
+        self.filter = CommentModel()
+        self.filter.setSourceModel(self.model)
+        self.setModel(self.filter)
+        self.rootItem = self.model.invisibleRootItem()
+        self.setWordWrap(True)
+        self.setItemDelegate(ItemWordWrap())
+
+
+class ItemWordWrap(QStyledItemDelegate):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def paint(self, painter, option, index):
+        text = index.data()
+        doc = QTextDocument()
+        doc.setHtml(text)
+        doc.setTextWidth(option.rect.width())
+        painter.save()
+        painter.translate(option.rect.x(), option.rect.y())
+        doc.drawContents(painter)
+        painter.restore()
+        index.model().setData(index, option.rect.width(), Qt.UserRole + 1337)
+
+    def sizeHint(self, option, index):
+        text = index.model().data(index)
+        doc = QTextDocument()
+        doc.setHtml(text)
+        width = index.model().data(index, Qt.UserRole + 1337)
+        doc.setTextWidth(width)
+        return QSize(doc.idealWidth(), doc.size().height())
+
+
+class CommentModel(QSortFilterProxyModel):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def lessThan(self, left, right):
+        left = self.sourceModel().data(left, Qt.UserRole + 1337)
+        right = self.sourceModel().data(right, Qt.UserRole + 1337)
+        return left < right
