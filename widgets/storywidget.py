@@ -37,10 +37,16 @@ from utilities import getResourcesPath
 class StoryWidget(QWidget):
     def __init__(self, HNItem, parent=None):
         super().__init__(parent)
+        self.listWidget = self.parent()
+        self.stackedWidget = self.listWidget.parent()
+        self.mainWindow = self.stackedWidget.parent().parent()
         uic.loadUi(os.path.join(getResourcesPath(), 'ui', 'storywidget.ui'),
                    self)
+        self.pos = HNItem['pos']
+        self.kids = HNItem['kids'] if 'kids' in HNItem else []
+
         # format position
-        self.labelPosition.setText('%2d. ' % HNItem['pos'])
+        self.labelPosition.setText('%2d. ' % self.pos)
         self.labelPosition.setStyleSheet(
             'QLabel { font-size : 12pt; color: gray}')
 
@@ -84,10 +90,17 @@ class StoryWidget(QWidget):
             'QLabel { font-size : 9pt; color: gray }')
         self.labelComments.setStyleSheet(
             'QLabel { font-size : 9pt; color: gray }')
+        self.labelComments.clicked.connect(self.openComments)
 
     def openURL(self, url):
         if url:
             QDesktopServices.openUrl(QUrl(url))
+
+    def openComments(self):
+        for kid in self.kids:
+            item = self.mainWindow.hn.get('item/%r' % kid, name=None)
+            if not 'deleted' in item:
+                print(item)
 
 
 def format_time(seconds):

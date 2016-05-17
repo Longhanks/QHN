@@ -62,7 +62,7 @@ class MainWindow(QMainWindow):
 
     def addItem(self, HNItem):
         listitem = StoryListItem(HNItem['pos'])
-        storyitem = StoryWidget(HNItem)
+        storyitem = StoryWidget(HNItem, parent=self.listWidget)
         listitem.setSizeHint(storyitem.sizeHint())
         self.listWidget.addItem(listitem)
         self.listWidget.setItemWidget(listitem, storyitem)
