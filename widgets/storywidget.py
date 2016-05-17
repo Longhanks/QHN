@@ -168,6 +168,7 @@ class CommentTree(QTreeView):
         self.filter = CommentModel()
         self.filter.setSourceModel(self.model)
         self.setModel(self.filter)
+        self.filter.setDynamicSortFilter(False)
         self.rootItem = self.model.invisibleRootItem()
         self.setWordWrap(True)
         self.setItemDelegate(ItemWordWrap())
